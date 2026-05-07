@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Event Check-In — Print QR</title>
+  <style>
+    :root {
+      --ink: #15151a;
+      --paper: #ffffff;
+      --soft: #6a6a78;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #efeee8; color: var(--ink); font-family: system-ui, -apple-system, sans-serif; }
+    .poster {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 24px auto;
+      background: var(--paper);
+      padding: 28mm 24mm;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18mm;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.08);
+    }
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 12px;
+      color: var(--soft);
+    }
+    .title {
+      font-size: 44px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      text-align: center;
+      line-height: 1.05;
+      margin: 0;
+    }
+    .qr {
+      width: 130mm;
+      height: 130mm;
+      display: grid;
+      place-items: center;
+      background: #fff;
+      border: 1px solid #e7e5dd;
+      padding: 10mm;
+    }
+    .qr img { width: 100%; height: 100%; image-rendering: pixelated; }
+    .footer { text-align: center; }
+    .footer-line { font-size: 18px; font-weight: 600; }
+    .footer-sub  { font-size: 14px; color: var(--soft); margin-top: 6px; }
+    .url {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      color: var(--soft);
+      word-break: break-all;
+      text-align: center;
+    }
+    @media print {
+      html, body { background: #fff; }
+      .poster { margin: 0; box-shadow: none; }
+      @page { size: A4; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div>
+      <div class="eyebrow">Welcome</div>
+      <h1 class="title" id="event-title">Event Name</h1>
+    </div>
+
+    <div class="qr">
+      <img src="event-qr.png" alt="Scan to check in" />
+    </div>
+
+    <div class="footer">
+      <div class="footer-line">Scan to check in</div>
+      <div class="footer-sub">Use your phone camera — no app needed</div>
+      <div class="url" id="qr-url"></div>
+    </div>
+  </div>
+  <script>
+    // Hint the URL beneath the QR for visibility (read from a meta or just leave blank).
+    // If you want to display the URL automatically, edit this line:
+    document.getElementById('qr-url').textContent = '';
+  </script>
+</body>
+</html>
