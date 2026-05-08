@@ -7,7 +7,7 @@ const router = Router();
 
 router.post('/register', async (req, res, next) => {
   try {
-    const { full_name, email, phone, address, day } = req.body ?? {};
+    const { full_name, email, phone, address, gender, occupation, day } = req.body ?? {};
 
     if (!isValidDay(day)) {
       return res.status(400).json({
@@ -73,10 +73,12 @@ router.post('/register', async (req, res, next) => {
         phone: phone ? String(phone).trim() : null,
         phone_normalized: phoneNorm,
         address: address ? String(address).trim() : null,
+        gender: gender ? String(gender).trim() : null,
+        occupation: occupation ? String(occupation).trim() : null,
         source: 'manual',
         [column]: now
       })
-      .select('id, full_name, email, phone, day1_checkin, day2_checkin')
+      .select('id, full_name, email, phone, address, gender, occupation, day1_checkin, day2_checkin')
       .single();
 
     if (insertErr) throw insertErr;

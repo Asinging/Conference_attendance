@@ -1,7 +1,7 @@
-export const EVENT_NAME = 'Event Name';
+export const EVENT_NAME = 'HeavenWorld Ladies Conference 2026';
 
-export const DAY1_DATE = '2026-05-15';
-export const DAY2_DATE = '2026-05-16';
+export const DAY1_DATE = '2026-05-09';
+export const DAY2_DATE = '2026-05-10';
 
 export const TIMEZONE_OFFSET_HOURS = 1;
 

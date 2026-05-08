@@ -18,7 +18,7 @@ router.post('/lookup', async (req, res, next) => {
     const column = normalized.type === 'email' ? 'email_normalized' : 'phone_normalized';
     const { data, error } = await supabase
       .from('attendees')
-      .select('id, full_name, email, phone, day1_checkin, day2_checkin, source')
+      .select('id, full_name, email, phone, address, gender, occupation, day1_checkin, day2_checkin, source')
       .eq(column, normalized.value)
       .limit(1)
       .maybeSingle();

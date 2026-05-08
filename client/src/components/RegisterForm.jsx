@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const GENDER_OPTIONS = ['Female', 'Male', 'Prefer not to say'];
 
-function validate({ full_name, email, phone, address }) {
+function validate({ full_name, email, phone, address, gender, occupation }) {
   const errors = {};
   if (!full_name.trim()) errors.full_name = 'Full name is required.';
 
@@ -20,6 +21,8 @@ function validate({ full_name, email, phone, address }) {
     if (digits.length < 10) errors.phone = 'Phone number must have at least 10 digits.';
   }
   if (!address.trim()) errors.address = 'Address is required.';
+  if (!gender) errors.gender = 'Please select an option.';
+  if (!occupation.trim()) errors.occupation = 'Occupation is required.';
   return errors;
 }
 
@@ -29,7 +32,9 @@ export default function RegisterForm({ initialIdentifier, onSubmit, onCancel, lo
     full_name: '',
     email: isInitialEmail ? initialIdentifier : '',
     phone: !isInitialEmail && initialIdentifier ? initialIdentifier : '',
-    address: ''
+    address: '',
+    gender: '',
+    occupation: ''
   });
   const [touched, setTouched] = useState({});
   const nameRef = useRef(null);
@@ -46,13 +51,22 @@ export default function RegisterForm({ initialIdentifier, onSubmit, onCancel, lo
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setTouched({ full_name: true, email: true, phone: true, address: true });
+    setTouched({
+      full_name: true,
+      email: true,
+      phone: true,
+      address: true,
+      gender: true,
+      occupation: true
+    });
     if (hasErrors) return;
     onSubmit({
       full_name: form.full_name.trim(),
       email: form.email.trim() || null,
       phone: form.phone.trim() || null,
-      address: form.address.trim()
+      address: form.address.trim(),
+      gender: form.gender,
+      occupation: form.occupation.trim()
     });
   };
 
@@ -105,6 +119,37 @@ export default function RegisterForm({ initialIdentifier, onSubmit, onCancel, lo
           disabled={loading}
         />
         {fieldError('phone') && <span className="field__error">{fieldError('phone')}</span>}
+      </label>
+
+      <label className="field">
+        <span className="field__label">Gender</span>
+        <select
+          className={`field__input ${fieldError('gender') ? 'field__input--error' : ''}`}
+          value={form.gender}
+          onChange={setField('gender')}
+          onBlur={blur('gender')}
+          disabled={loading}
+        >
+          <option value="">Select…</option>
+          {GENDER_OPTIONS.map((g) => (
+            <option key={g} value={g}>{g}</option>
+          ))}
+        </select>
+        {fieldError('gender') && <span className="field__error">{fieldError('gender')}</span>}
+      </label>
+
+      <label className="field">
+        <span className="field__label">Occupation</span>
+        <input
+          type="text"
+          className={`field__input ${fieldError('occupation') ? 'field__input--error' : ''}`}
+          value={form.occupation}
+          onChange={setField('occupation')}
+          onBlur={blur('occupation')}
+          disabled={loading}
+          autoCapitalize="words"
+        />
+        {fieldError('occupation') && <span className="field__error">{fieldError('occupation')}</span>}
       </label>
 
       <label className="field">

@@ -11,6 +11,8 @@ create table if not exists attendees (
   phone text,
   phone_normalized text,
   address text,
+  gender text,
+  occupation text,
   day1_checkin timestamptz,
   day2_checkin timestamptz,
   source text not null default 'manual',
