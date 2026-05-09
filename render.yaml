@@ -2,6 +2,7 @@ services:
   - type: web
     name: ladies-conference-server
   
+    rootDir: server       
     runtime: node
     plan: free
     buildCommand: npm install
