@@ -1,7 +1,7 @@
 services:
   - type: web
     name: ladies-conference-server
-    source: ./server
+  
     runtime: node
     plan: free
     buildCommand: npm install
