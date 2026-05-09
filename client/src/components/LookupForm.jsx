@@ -24,7 +24,8 @@ export default function LookupForm({ onSubmit, loading, error }) {
 
   const validationError = touched ? validate(value) : null;
   const hasError = !!validationError;
-  const inputMode = value.includes('@') ? 'email' : 'tel';
+  const looksLikePhone = value.length > 0 && /^[\d\s+\-().]+$/.test(value);
+  const inputMode = value.includes('@') ? 'email' : looksLikePhone ? 'tel' : 'text';
 
   const handleSubmit = (e) => {
     e.preventDefault();
