@@ -6,6 +6,9 @@ export default function ConfirmCard({ attendee, alreadyCheckedIn, onConfirm, onR
       <div className="confirm-meta">
         {attendee.email && <div>{attendee.email}</div>}
         {attendee.phone && <div>{attendee.phone}</div>}
+        {attendee.gender && <div>{attendee.gender}</div>}
+        {attendee.occupation && <div>{attendee.occupation}</div>}
+        {attendee.address && <div>{attendee.address}</div>}
       </div>
 
       {alreadyCheckedIn && (

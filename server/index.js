@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 
 import healthRoute from './routes/health.js';
+import adminRoute from './routes/admin.js';
 import lookupRoute from './routes/lookup.js';
 import checkinRoute from './routes/checkin.js';
 import registerRoute from './routes/register.js';
@@ -21,6 +22,7 @@ app.use(cors({ origin: CLIENT_ORIGIN }));
 app.use(express.json({ limit: '32kb' }));
 
 app.use('/api', healthRoute);
+app.use('/api', adminRoute);
 
 app.use('/api', (req, res, next) => {
   const token = req.header('x-event-token');
