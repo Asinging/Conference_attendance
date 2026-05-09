@@ -20,9 +20,7 @@ function mapHeader(raw) {
   if (h === 'gender')                               return 'gender';
   if (h.includes('address'))                        return 'address';
   if (h.includes('category') ||
-      h.includes('occupation') ||
-      h.includes('profession') ||
-      h.includes('describes'))                      return 'occupation';
+      (h.includes('describes') && h.includes('you'))) return 'occupation';
   if (h === 'utm source' || h === 'source')         return 'source';
   return null;
 }
@@ -179,6 +177,9 @@ export default function Admin() {
   // ── Attendees tab state
   const [filters, setFilters] = useState({ day: '', gender: '', occupation: '', from: '', to: '' });
   const [attendees, setAttendees] = useState(null);
+  const [search, setSearch]   = useState('');
+  const [page, setPage]       = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // ── Import tab state
   const fileRef               = useRef(null);
@@ -209,6 +210,8 @@ export default function Admin() {
     try {
       const { attendees: data } = await apiGet(token, filters);
       setAttendees(data);
+      setSearch('');
+      setPage(1);
     } catch (err) {
       setError(err.message);
       if (err.message.includes('Invalid')) { sessionStorage.removeItem('admin_token'); setAuthed(false); }
@@ -353,56 +356,117 @@ export default function Admin() {
             </div>
 
             {/* Results */}
-            {attendees !== null && (
-              <>
-                <div className="no-print" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-                  <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>
-                    {attendees.length} {attendees.length === 1 ? 'attendee' : 'attendees'}
-                  </span>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn--ghost" onClick={() => downloadCSV(attendees)} disabled={!attendees.length}
-                      style={{ padding: '8px 16px', minHeight: 'auto', fontSize: '0.88rem' }}>Download CSV</button>
-                    <button className="btn btn--ghost" onClick={() => window.print()} disabled={!attendees.length}
-                      style={{ padding: '8px 16px', minHeight: 'auto', fontSize: '0.88rem' }}>Download PDF</button>
-                  </div>
-                </div>
+            {attendees !== null && (() => {
+              const q = search.trim().toLowerCase();
+              const filtered = q
+                ? attendees.filter(a =>
+                    a.full_name?.toLowerCase().includes(q) ||
+                    a.email?.toLowerCase().includes(q) ||
+                    displayPhone(a.phone).includes(q) ||
+                    a.gender?.toLowerCase().includes(q) ||
+                    a.occupation?.toLowerCase().includes(q) ||
+                    a.address?.toLowerCase().includes(q)
+                  )
+                : attendees;
+              const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+              const safePage   = Math.min(page, totalPages);
+              const pageRows   = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+              const startIdx   = (safePage - 1) * pageSize;
 
-                {attendees.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-soft)', background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--line)' }}>
-                    No attendees match the selected filters.
+              return (
+                <>
+                  {/* Search + download bar */}
+                  <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                    <input
+                      type="search"
+                      placeholder="Search name, email, phone, occupation…"
+                      value={search}
+                      onChange={e => { setSearch(e.target.value); setPage(1); }}
+                      style={{ flex: '1 1 220px', font: 'inherit', fontSize: '0.9rem', padding: '8px 12px', border: '1.5px solid var(--line)', borderRadius: 8, outline: 'none', minWidth: 0 }}
+                    />
+                    <span style={{ fontSize: '0.88rem', color: 'var(--ink-soft)', whiteSpace: 'nowrap' }}>
+                      {filtered.length} {filtered.length === 1 ? 'attendee' : 'attendees'}
+                      {q ? ` of ${attendees.length}` : ''}
+                    </span>
+                    <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                      <button className="btn btn--ghost" onClick={() => downloadCSV(filtered)} disabled={!filtered.length}
+                        style={{ padding: '8px 14px', minHeight: 'auto', fontSize: '0.88rem' }}>CSV</button>
+                      <button className="btn btn--ghost" onClick={() => window.print()} disabled={!filtered.length}
+                        style={{ padding: '8px 14px', minHeight: 'auto', fontSize: '0.88rem' }}>PDF</button>
+                    </div>
                   </div>
-                ) : (
-                  <div style={{ overflowX: 'auto', borderRadius: 'var(--radius)', border: '1px solid var(--line)', background: 'var(--surface)' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-                      <thead>
-                        <tr style={{ background: '#f7f6f1', borderBottom: '2px solid var(--line)' }}>
-                          {['#', 'Name', 'Email', 'Phone', 'Gender', 'Occupation', 'Address', 'Day 1', 'Day 2'].map(h => (
-                            <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--ink-soft)', whiteSpace: 'nowrap', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                              {h}
-                            </th>
+
+                  {filtered.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-soft)', background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--line)' }}>
+                      {q ? `No attendees match "${search}".` : 'No attendees match the selected filters.'}
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ overflowX: 'auto', borderRadius: 'var(--radius)', border: '1px solid var(--line)', background: 'var(--surface)' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                          <thead>
+                            <tr style={{ background: '#f7f6f1', borderBottom: '2px solid var(--line)' }}>
+                              {['#', 'Name', 'Email', 'Phone', 'Gender', 'Occupation', 'Address', 'Day 1', 'Day 2'].map(h => (
+                                <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--ink-soft)', whiteSpace: 'nowrap', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {pageRows.map((a, i) => (
+                              <tr key={a.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                                <td style={td}>{startIdx + i + 1}</td>
+                                <td style={{ ...td, fontWeight: 600, whiteSpace: 'nowrap' }}>{a.full_name}</td>
+                                <td style={td}>{a.email ?? '—'}</td>
+                                <td style={{ ...td, whiteSpace: 'nowrap' }}>{displayPhone(a.phone)}</td>
+                                <td style={td}>{a.gender ?? '—'}</td>
+                                <td style={td}>{a.occupation ?? '—'}</td>
+                                <td style={{ ...td, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={a.address ?? ''}>{a.address ?? '—'}</td>
+                                <td style={{ ...td, whiteSpace: 'nowrap', color: a.day1_checkin ? '#1f7a3a' : 'var(--ink-soft)' }}>{fmt(a.day1_checkin)}</td>
+                                <td style={{ ...td, whiteSpace: 'nowrap', color: a.day2_checkin ? '#1f7a3a' : 'var(--ink-soft)' }}>{fmt(a.day2_checkin)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination */}
+                      <div className="no-print" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, flexWrap: 'wrap', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <button onClick={() => setPage(1)} disabled={safePage === 1} style={pgBtn}>«</button>
+                          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1} style={pgBtn}>‹</button>
+                          {Array.from({ length: totalPages }, (_, i) => i + 1)
+                            .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 2)
+                            .reduce((acc, n, i, arr) => {
+                              if (i > 0 && n - arr[i - 1] > 1) acc.push('…');
+                              acc.push(n);
+                              return acc;
+                            }, [])
+                            .map((n, i) =>
+                              n === '…'
+                                ? <span key={`e${i}`} style={{ padding: '0 4px', color: 'var(--ink-soft)' }}>…</span>
+                                : <button key={n} onClick={() => setPage(n)} style={{ ...pgBtn, fontWeight: n === safePage ? 700 : 400, background: n === safePage ? 'var(--accent)' : 'transparent', color: n === safePage ? '#fff' : 'var(--ink)', borderColor: n === safePage ? 'var(--accent)' : 'var(--line)' }}>{n}</button>
+                            )
+                          }
+                          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} style={pgBtn}>›</button>
+                          <button onClick={() => setPage(totalPages)} disabled={safePage === totalPages} style={pgBtn}>»</button>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--ink-soft)' }}>
+                          <span>Rows per page:</span>
+                          {[10, 25, 50, 100].map(n => (
+                            <button key={n} onClick={() => { setPageSize(n); setPage(1); }}
+                              style={{ ...pgBtn, fontWeight: pageSize === n ? 700 : 400, background: pageSize === n ? 'var(--accent)' : 'transparent', color: pageSize === n ? '#fff' : 'var(--ink)', borderColor: pageSize === n ? 'var(--accent)' : 'var(--line)' }}>
+                              {n}
+                            </button>
                           ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {attendees.map((a, i) => (
-                          <tr key={a.id} style={{ borderBottom: '1px solid var(--line)' }}>
-                            <td style={td}>{i + 1}</td>
-                            <td style={{ ...td, fontWeight: 600, whiteSpace: 'nowrap' }}>{a.full_name}</td>
-                            <td style={td}>{a.email ?? '—'}</td>
-                            <td style={{ ...td, whiteSpace: 'nowrap' }}>{displayPhone(a.phone)}</td>
-                            <td style={td}>{a.gender ?? '—'}</td>
-                            <td style={td}>{a.occupation ?? '—'}</td>
-                            <td style={{ ...td, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={a.address ?? ''}>{a.address ?? '—'}</td>
-                            <td style={{ ...td, whiteSpace: 'nowrap', color: a.day1_checkin ? '#1f7a3a' : 'var(--ink-soft)' }}>{fmt(a.day1_checkin)}</td>
-                            <td style={{ ...td, whiteSpace: 'nowrap', color: a.day2_checkin ? '#1f7a3a' : 'var(--ink-soft)' }}>{fmt(a.day2_checkin)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </>
-            )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              );
+            })()}
           </>
         )}
 
@@ -530,3 +594,8 @@ const labelStyle = {
   marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em',
 };
 const td = { padding: '10px 14px', color: 'var(--ink-soft)' };
+const pgBtn = {
+  minWidth: 32, padding: '4px 8px', fontSize: '0.85rem', fontWeight: 400,
+  border: '1.5px solid var(--line)', borderRadius: 6, background: 'transparent',
+  color: 'var(--ink)', cursor: 'pointer', lineHeight: 1.4,
+};
