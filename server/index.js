@@ -10,15 +10,27 @@ import registerRoute from './routes/register.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 const EVENT_TOKEN = process.env.EVENT_TOKEN;
 
 if (!EVENT_TOKEN) {
   throw new Error('Missing EVENT_TOKEN in environment');
 }
 
+// CLIENT_ORIGIN supports a comma-separated list, e.g.:
+// https://ladiesconference-psi.vercel.app,http://localhost:5173
+const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
 app.set('trust proxy', true);
-app.use(cors({ origin: CLIENT_ORIGIN }));
+app.use(cors({
+  origin: (origin, cb) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
+}));
 app.use(express.json({ limit: '32kb' }));
 
 app.use('/api', healthRoute);
