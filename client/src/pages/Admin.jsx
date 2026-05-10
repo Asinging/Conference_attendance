@@ -298,7 +298,7 @@ export default function Admin() {
             <div className="no-print" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '20px 20px 16px', marginBottom: 20 }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 16 }}>
 
-                <div>
+                <div className="flex ">
                   <div style={labelStyle}>Day</div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {[['', 'All'], ['1', 'Day 1'], ['2', 'Day 2']].map(([val, label]) => (
